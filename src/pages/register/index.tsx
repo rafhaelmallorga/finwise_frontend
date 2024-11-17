@@ -1,8 +1,15 @@
+import { FormBox, FormFrame, RegisterForm, LogoFrame, MainFrame } from "../../components/form-components";
+
 const RegisterPage = () => {
     return (
-        <div>
-            Register
-        </div>
+        <MainFrame>
+            <FormFrame>
+                <FormBox>
+                    <RegisterForm />
+                </FormBox>
+            </FormFrame>
+            <LogoFrame />
+        </MainFrame>
     )
 }
 
