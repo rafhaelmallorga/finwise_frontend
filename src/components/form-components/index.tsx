@@ -65,7 +65,7 @@ const LoginForm = (): JSX.Element => {
         <div className='RememberSection'>
             <span><input type="checkbox"/> Remember me</span>
 
-            <a href="_blank">Forgot Password?</a>
+            <a href="https://www.mayoclinic.org/healthy-lifestyle/healthy-aging/in-depth/memory-loss/art-20046518" target='_blank'>Forgot Password?</a>
         </div>
         <Button>Login</Button>
         </form>

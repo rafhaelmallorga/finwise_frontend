@@ -15,6 +15,37 @@ const MainFrame = ({children}: ElementProps): JSX.Element => {
     )
 }
 
+interface OverlayTransactionsProps {
+    children?: React.ReactNode;
+    overlay: boolean;
+    setOverlay: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const OverlayTransactions: React.FC<OverlayTransactionsProps>  = ({ overlay, setOverlay}): JSX.Element => {
+    return (
+        <div className="Overlay">
+            <div className='OverlayAreaContent'>
+                <div className='OverlayHeader'>
+                    <h3>New Transaction</h3>
+                    <button className='CloseButton' onClick={() => setOverlay(!overlay)}>X</button>
+                </div>
+               <form action="" className='OverlayForm'>
+                    <input type="text" placeholder='Title' className='Input'/>
+                    <select name="type" id="" className='Input'>
+                        <option value="" disabled selected></option>
+                        <option value="income">Income</option>
+                        <option value="outcome">Outcome</option>
+                    </select>
+                    <input type="number" min={0} placeholder='Value' className='Input'/>
+                    <button className='Button'>Create</button>
+               </form>
+            </div>
+        </div>
+    )
+}
+
+
+
 const Header = () => {
     return (
         <header className='Header'>
@@ -40,12 +71,17 @@ const ContentFrame = ({children}: ElementProps): JSX.Element => {
     )
 }
 
-const MenuBar = () => {
+interface MenuBarProps {
+    children?: React.ReactNode;
+    overlay: boolean;
+    setOverlay: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const MenuBar: React.FC<MenuBarProps> = ({overlay, setOverlay}) => {   
     return (
         <div className='MenuBar'>
             <div className='ButtonSection'>
-                <button className='IncomeButton'>+ Income</button>
-                <button className='OutcomeButton'>- Outcome</button>
+                <button className='TransactionButton' onClick={() => setOverlay(!overlay)}>Transactions</button>
             </div>
             <span className='DateSection'>November/2024</span>
         </div>
@@ -82,10 +118,31 @@ const HistorySection = ({children}: ElementProps): JSX.Element => {
             <div className='ContentArea'>
                 <h3>History</h3>
                 <div className='CardArea'>
-                        aaa
+                        <HistoryCard/>
+                        <HistoryCard/>
+                        <HistoryCard/>
+                        <HistoryCard/>
+                        <HistoryCard/>
+                        <HistoryCard/>
+                        <HistoryCard/>
+                        <HistoryCard/>
                 </div>
             </div>
-            
+        </div>
+    )
+}
+
+const HistoryCard = (): JSX.Element => {
+    return (
+        <div className='HistoryCard'>
+            <div className='HistoryCardContent'>
+                <span className='HistoryCardTittle'>Supermarket Buy</span>
+                <span className='HistoryCardValue'>$ 114,90</span>
+                <div className='HistoryCardSubSection'>
+                    <span>Outcome</span>
+                    <button>Remove</button>
+                </div>
+            </div>
         </div>
     )
 }
@@ -106,10 +163,6 @@ const BalanceSection = ({children}: ElementProps): JSX.Element => {
                         <td className='Values'>$ 5,020.00</td>
                     </tr>
                     <tr>
-                        <td>Credit Cards</td>
-                        <td className='CreditValues'>$ 1,050.00</td>
-                    </tr>
-                    <tr>
                         <td>Savings</td>
                         <td className='Values'>$ 10,020.00</td>
                     </tr>
@@ -121,32 +174,63 @@ const BalanceSection = ({children}: ElementProps): JSX.Element => {
 
 const AccountsSection = ({children}: ElementProps): JSX.Element => {
     return (
-        <div className='BalanceSection'>
+        <div className='AccountsSection'>
             <div className='ContentArea'>
                 <h3>Bank Accounts</h3>
+                <div className='AccountCardArea'>
+                    <AccountCard/>
+                    <AccountCard/>
+                    <AccountCard/>
+                </div>
             </div>
         </div>
     )
 }
 
-const CreditCardsSection = ({children}: ElementProps): JSX.Element => {
+const AccountCard = () => {
     return (
-        <div className='BalanceSection'>
-            <div className='ContentArea'>
-                <h3>Credit Cards</h3>
-            </div>
+        <div className='AccountCard'>
+            <div>
+                <span>Bank Name</span>
+                <div>
+                    <button className='CardEditButton'>Edit</button>
+                    <button className='CardRemoveButton'>Remove</button>
+                </div>
+            </div>         
+            <span className='AccountCardValue'>Total: <span>$ 2.000,00</span></span>
         </div>
     )
 }
+
 
 const SavingsSection = ({children}: ElementProps): JSX.Element => {
     return (
-        <div className='BalanceSection'>
+        <div className='SavingsSection'>
             <div className='ContentArea'>
                 <h3>Savings</h3>
+                <div className='SavingsCardArea'>
+                    <SavingsCard/>
+                    <SavingsCard/>
+                    <SavingsCard/>
+                </div>
             </div>
         </div>
     )
 }
 
-export {MainFrame, Header, ContentFrame, MenuBar, MainSection, LeftColum, RightColum, HistorySection, BalanceSection, AccountsSection, CreditCardsSection, SavingsSection}
+const SavingsCard = () => {
+    return (
+        <div className='SavingsCard'>
+            <div>
+                <span>Saving Title</span>
+                <div>
+                    <button className='CardEditButton'>Edit</button>
+                    <button className='CardRemoveButton'>Remove</button>
+                </div>
+            </div>         
+            <span className='SavingsCardValue'>Total: <span>$ 2.000,00</span></span>
+        </div>
+    )
+}
+
+export {MainFrame, Header, ContentFrame, MenuBar, MainSection, LeftColum, RightColum, HistorySection, BalanceSection, AccountsSection, SavingsSection, OverlayTransactions}

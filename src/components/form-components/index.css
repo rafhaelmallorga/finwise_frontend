@@ -33,7 +33,8 @@
 }
 
 .Button:hover {
-    filter: brightness(1.4)
+    filter: brightness(1.4);
+    cursor: pointer;
 }
 
 .MainFrame {
