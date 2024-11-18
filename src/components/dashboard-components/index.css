@@ -49,13 +49,15 @@
     justify-content: center;
     align-items: center;
 
-    a {
+    button {
         margin-right: 10px;
         font-weight: bold;
-        color: #fff
+        color: #fff;
+        background-color: #0000;
+        border: none;
     }
 
-    a:hover {
+    button:hover {
         color: #9bff87;
     }
 
@@ -176,8 +178,18 @@
     background-color: #a0a0a0;
 }
 
-.HistoryCard {
-    background-color: #0f0;
+.HistoryCardGreen {
+    background-color: #0f05;
+    border-radius: 5px;
+    box-sizing: border-box;
+    height: 100px;
+    margin: 0 0 10px 0;
+    display: flex;
+    justify-content: right;
+}
+
+.HistoryCardRed {
+    background-color: #f005;
     border-radius: 5px;
     box-sizing: border-box;
     height: 100px;

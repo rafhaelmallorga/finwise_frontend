@@ -1,5 +1,18 @@
-import { ReactNode } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 import './index.css'
+import { useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
+import db, { Bank_Accounts, Savings, Transactions } from '../../db';
+import { toast } from 'react-toastify';
+import { useContext } from 'react';
+import { AccountsDBContext } from '../../providers/Accounts';
+import { SavingsDBContext } from '../../providers/Savings';
+import { useForm } from 'react-hook-form';
+import * as yup from 'yup'
+import { yupResolver } from '@hookform/resolvers/yup'
+import { v4 as uuidv4 } from 'uuid'
+import { TransactionsDBContext } from '../../providers/Transactions';
+
 
 interface ElementProps {
     placeholder?: string,
@@ -8,6 +21,12 @@ interface ElementProps {
 }
 
 const MainFrame = ({children}: ElementProps): JSX.Element => {
+    const isAuthenticated = localStorage.getItem("isAuthenticated")
+
+    if (!isAuthenticated) {
+        return <Navigate to="/login" replace />;
+    }
+
     return (
         <div className='MainFrameDashboard'>
             {children}
@@ -22,6 +41,42 @@ interface OverlayTransactionsProps {
 }
 
 const OverlayTransactions: React.FC<OverlayTransactionsProps>  = ({ overlay, setOverlay}): JSX.Element => {
+    const {transactionsDB, setTransactionsDB} = useContext(TransactionsDBContext)
+
+    const schema = yup.object().shape({
+        title: yup.string().required("Required field!").min(3, "Minimum length is 3"),
+        type: yup.string().required("Required field!"),
+        value: yup.number().required("Required field!").min(0)
+    })
+
+
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors }
+    } = useForm({ resolver: yupResolver(schema)});
+
+    const createNewTransaction = (transaction: Partial<Transactions>) => {
+        
+        const user_id = localStorage.getItem("user_id")
+
+        const newTransaction = {
+            id: uuidv4(),
+            title: transaction.title,
+            type: transaction.type,
+            date: new Date().toISOString(),
+            value: transaction.value,
+            user_id: user_id
+        }
+
+        setTransactionsDB([newTransaction, ...transactionsDB])
+
+        toast("Transaction created with success!")
+        reset()
+        setOverlay(!overlay)
+    }
+
     return (
         <div className="Overlay">
             <div className='OverlayAreaContent'>
@@ -29,14 +84,29 @@ const OverlayTransactions: React.FC<OverlayTransactionsProps>  = ({ overlay, set
                     <h3>New Transaction</h3>
                     <button className='CloseButton' onClick={() => setOverlay(!overlay)}>X</button>
                 </div>
-               <form action="" className='OverlayForm'>
-                    <input type="text" placeholder='Title' className='Input'/>
-                    <select name="type" id="" className='Input'>
+               <form action="" className='OverlayForm' onSubmit={handleSubmit(createNewTransaction)}>
+                    <input type="text" placeholder='Title' className='Input' {...register("title")}/>
+                    {errors && (
+                        <p>
+                        {errors.title?.message}
+                        </p>
+                    )}
+                    <select name="type" id="" className='Input' {...register("type")}>
                         <option value="" disabled selected></option>
                         <option value="income">Income</option>
                         <option value="outcome">Outcome</option>
                     </select>
-                    <input type="number" min={0} placeholder='Value' className='Input'/>
+                    {errors && (
+                        <p>
+                        {errors.type?.message}
+                        </p>
+                    )}
+                    <input type="number" min={0} placeholder='Value' className='Input' {...register("value")}/>
+                    {errors && (
+                        <p>
+                        {errors.value?.message}
+                        </p>
+                    )}
                     <button className='Button'>Create</button>
                </form>
             </div>
@@ -44,9 +114,42 @@ const OverlayTransactions: React.FC<OverlayTransactionsProps>  = ({ overlay, set
     )
 }
 
+interface OverlayEditProps {
+    id?: string;
+    saving?: Savings;
+    children?: React.ReactNode;
+    account?: Bank_Accounts,
+    edit: boolean;
+    setEdit: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const OverlayEdit: React.FC<OverlayEditProps>  = ({ edit, setEdit}): JSX.Element => {
+    return (
+        <div className="Overlay">
+            <div className='OverlayAreaContent'>
+                <div className='OverlayHeader'>
+                    <h3>Edit</h3>
+                    <button className='CloseButton' onClick={() => setEdit(!edit)}>X</button>
+                </div>
+               <form action="" className='OverlayForm'>
+                    <input type="text" placeholder='Title' className='Input'/>
+                    <input type="number" min={0} placeholder='Value' className='Input'/>
+                    <button className='Button'>Save</button>
+               </form>
+            </div>
+        </div>
+    )
+}
 
 
 const Header = () => {
+    const navigate = useNavigate();
+
+    const logOut = () => {
+        localStorage.clear()
+        navigate("/login")
+    }
+
     return (
         <header className='Header'>
             <div className='HeaderContent'>
@@ -55,7 +158,7 @@ const Header = () => {
                     <span>FinWise</span>
                 </div>
                 <div className='UserSection'>
-                    <a href='/login'>Log Out</a>
+                    <button onClick={logOut}>Log Out</button>
                     <img src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS-b47b6d-EwdrE7plm9telOYTSgUmSdO9BDQ&s' alt='User Profile Photo'/>
                 </div>
             </div>
@@ -78,12 +181,28 @@ interface MenuBarProps {
 }
 
 const MenuBar: React.FC<MenuBarProps> = ({overlay, setOverlay}) => {   
+    const months = [
+        "January", 
+        "February", 
+        "March", 
+        "April", 
+        "May", 
+        "June", 
+        "July", 
+        "August", 
+        "September", 
+        "October", 
+        "November", 
+        "December"
+      ];
+      
+    const date = new Date()
     return (
         <div className='MenuBar'>
             <div className='ButtonSection'>
                 <button className='TransactionButton' onClick={() => setOverlay(!overlay)}>Transactions</button>
             </div>
-            <span className='DateSection'>November/2024</span>
+            <span className='DateSection'>{months[date.getMonth()]}/{date.getFullYear()}</span>
         </div>
     )
 }
@@ -113,34 +232,38 @@ const RightColum = ({children}: ElementProps): JSX.Element => {
 }
 
 const HistorySection = ({children}: ElementProps): JSX.Element => {
+    const {transactionsDB, setTransactionsDB} = useContext(TransactionsDBContext)
+
     return (
         <div className='HistorySection'>
             <div className='ContentArea'>
                 <h3>History</h3>
                 <div className='CardArea'>
-                        <HistoryCard/>
-                        <HistoryCard/>
-                        <HistoryCard/>
-                        <HistoryCard/>
-                        <HistoryCard/>
-                        <HistoryCard/>
-                        <HistoryCard/>
-                        <HistoryCard/>
+                        { transactionsDB.map(transaction => <HistoryCard id={transaction.id} transaction={transaction}/>)}
                 </div>
             </div>
         </div>
     )
 }
 
-const HistoryCard = (): JSX.Element => {
+const HistoryCard = ({transaction}): JSX.Element => {
+    const {transactionsDB, setTransactionsDB} = useContext(TransactionsDBContext)
+
+    const removeItem = () => {
+        setTransactionsDB(transactionsDB.filter(t=>t.id !== transaction.id))
+        toast("Transaction removed with success!")
+    }
+    const date = new Date(transaction.date)
+
     return (
-        <div className='HistoryCard'>
+        <div className={transaction.type === "income" ? 'HistoryCardGreen' : 'HistoryCardRed'}>
             <div className='HistoryCardContent'>
-                <span className='HistoryCardTittle'>Supermarket Buy</span>
-                <span className='HistoryCardValue'>$ 114,90</span>
+                <span className='HistoryCardTittle'>{transaction.title}</span>
+                <span>{date.getFullYear()}/{date.getMonth()+1}/{date.getDate()} - {date.getHours()}:{date.getMinutes()}:{date.getSeconds()}</span>
+                <span className='HistoryCardValue'>$ {transaction.value.toFixed(2)}</span>
                 <div className='HistoryCardSubSection'>
-                    <span>Outcome</span>
-                    <button>Remove</button>
+                    <span>{transaction.type}</span>
+                    <button onClick={removeItem}>Remove</button>
                 </div>
             </div>
         </div>
@@ -148,6 +271,20 @@ const HistoryCard = (): JSX.Element => {
 }
 
 const BalanceSection = ({children}: ElementProps): JSX.Element => {
+    const {accountDB, setAccountDB} = useContext(AccountsDBContext)
+    const {savingsDB, setSavingsDB} = useContext(SavingsDBContext)
+
+    const [totalBankAccounts, setTotalBankAccounts] = useState(0);
+    const [totalSavings, setTotalSavings] = useState(0);
+
+    useEffect(() => {
+        const bankTotal = accountDB.reduce((acc, account) => acc + account.amount, 0);
+        setTotalBankAccounts(bankTotal);
+    
+        const savingsTotal = savingsDB.reduce((acc, saving) => acc + saving.amount, 0);
+        setTotalSavings(savingsTotal);
+      }, [accountDB, savingsDB]); 
+
     return (
         <div className='BalanceSection'>
             <div className='ContentArea'>
@@ -155,16 +292,12 @@ const BalanceSection = ({children}: ElementProps): JSX.Element => {
                 <h4>Totals</h4>
                 <table>
                     <tr>
-                        <td>Cash</td>
-                        <td className='Values'>$ 450.00</td>
-                    </tr>
-                    <tr>
                         <td>Bank Account</td>
-                        <td className='Values'>$ 5,020.00</td>
+                        <td className='Values'>$ {totalBankAccounts.toFixed(2)}</td>
                     </tr>
                     <tr>
                         <td>Savings</td>
-                        <td className='Values'>$ 10,020.00</td>
+                        <td className='Values'>$ {totalSavings.toFixed(2)}</td>
                     </tr>
                 </table>
             </div>
@@ -172,65 +305,79 @@ const BalanceSection = ({children}: ElementProps): JSX.Element => {
     )
 }
 
-const AccountsSection = ({children}: ElementProps): JSX.Element => {
+const AccountsSection: React.FC<OverlayEditProps> = ({edit, setEdit}): JSX.Element => {
+    const {accountDB, setAccountDB} = useContext(AccountsDBContext)
+
     return (
         <div className='AccountsSection'>
             <div className='ContentArea'>
                 <h3>Bank Accounts</h3>
                 <div className='AccountCardArea'>
-                    <AccountCard/>
-                    <AccountCard/>
-                    <AccountCard/>
+                    { accountDB.map(account => <AccountCard account={account} edit={edit} setEdit={setEdit}/>)}
                 </div>
             </div>
         </div>
     )
 }
 
-const AccountCard = () => {
+const AccountCard: React.FC<OverlayEditProps> = ({account, edit, setEdit}) => {
+    const {accountDB, setAccountDB} = useContext(AccountsDBContext)
+
+    const removeItem = () => {
+        setAccountDB(accountDB.filter(a => a.id !== account!.id))
+        toast("Bank Account removed with success!")
+    }
+
     return (
         <div className='AccountCard'>
             <div>
-                <span>Bank Name</span>
+                <span>{account!.name}</span>
                 <div>
-                    <button className='CardEditButton'>Edit</button>
-                    <button className='CardRemoveButton'>Remove</button>
+                    <button className='CardEditButton' onClick={()=>setEdit(!edit)}>Edit</button>
+                    <button className='CardRemoveButton' onClick={removeItem}>Remove</button>
                 </div>
             </div>         
-            <span className='AccountCardValue'>Total: <span>$ 2.000,00</span></span>
+            <span className='AccountCardValue'>Total: <span>$ {account!.amount}</span></span>
         </div>
     )
 }
 
 
-const SavingsSection = ({children}: ElementProps): JSX.Element => {
+const SavingsSection: React.FC<OverlayEditProps> = ({edit, setEdit}): JSX.Element => {
+    const {savingsDB, setSavingsDB} = useContext(SavingsDBContext)
+    
     return (
         <div className='SavingsSection'>
             <div className='ContentArea'>
                 <h3>Savings</h3>
                 <div className='SavingsCardArea'>
-                    <SavingsCard/>
-                    <SavingsCard/>
-                    <SavingsCard/>
+                    { savingsDB.map(saving => <SavingsCard id={saving.id} saving={saving} edit={edit} setEdit={setEdit}/>) }
                 </div>
             </div>
         </div>
     )
 }
 
-const SavingsCard = () => {
+const SavingsCard: React.FC<OverlayEditProps> = ({saving, edit, setEdit}) => {
+    const {savingsDB, setSavingsDB} = useContext(SavingsDBContext)
+
+    const removeItem = () => {
+        setSavingsDB(savingsDB.filter(s => s.id !== saving!.id))
+        toast("Saving removed with success!")
+    }
+
     return (
         <div className='SavingsCard'>
             <div>
-                <span>Saving Title</span>
+                <span>{saving?.name}</span>
                 <div>
-                    <button className='CardEditButton'>Edit</button>
-                    <button className='CardRemoveButton'>Remove</button>
+                    <button className='CardEditButton' onClick={()=>setEdit(!edit)}>Edit</button>
+                    <button className='CardRemoveButton' onClick={removeItem}>Remove</button>
                 </div>
             </div>         
-            <span className='SavingsCardValue'>Total: <span>$ 2.000,00</span></span>
+            <span className='SavingsCardValue'>Total: <span>$ {saving?.amount}</span></span>
         </div>
     )
 }
 
-export {MainFrame, Header, ContentFrame, MenuBar, MainSection, LeftColum, RightColum, HistorySection, BalanceSection, AccountsSection, SavingsSection, OverlayTransactions}
+export {MainFrame, Header, ContentFrame, MenuBar, MainSection, LeftColum, RightColum, HistorySection, BalanceSection, AccountsSection, SavingsSection, OverlayTransactions, OverlayEdit}
