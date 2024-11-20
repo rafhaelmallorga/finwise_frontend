@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from 'react'
 import './index.css'
 import { useNavigate } from "react-router-dom";
 import { Navigate } from "react-router-dom";
-import db, { Bank_Accounts, Savings, Transactions } from '../../db';
+import { Bank_Accounts, Savings, Transactions } from '../../db';
 import { toast } from 'react-toastify';
 import { useContext } from 'react';
 import { AccountsDBContext } from '../../providers/Accounts';
@@ -12,6 +12,7 @@ import * as yup from 'yup'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { v4 as uuidv4 } from 'uuid'
 import { TransactionsDBContext } from '../../providers/Transactions';
+import { TemporaryContext } from '../../providers/Temporary';
 
 
 interface ElementProps {
@@ -121,19 +122,144 @@ interface OverlayEditProps {
     account?: Bank_Accounts,
     edit: boolean;
     setEdit: React.Dispatch<React.SetStateAction<boolean>>;
+    createModal: boolean;
+    setCreateModal: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const OverlayCreate: React.FC<OverlayEditProps>  = ({ createModal, setCreateModal}): JSX.Element => {
+    const {accountDB, setAccountDB} = useContext(AccountsDBContext)
+    const {savingsDB, setSavingsDB} = useContext(SavingsDBContext)
+    const {temporary, setTemporary} = useContext(TemporaryContext)
+
+    const schema = yup.object().shape({
+        name: yup.string().required("Required field!").min(3, "Minimum length is 3"),
+        amount: yup.number().required("Required field!").min(0)
+    })
+
+    const {
+        register,
+        handleSubmit,
+        formState: { errors }
+    } = useForm({ 
+        resolver: yupResolver(schema)
+    });
+
+    const create = (form) => {
+        const newObj = {
+            id: uuidv4(),
+            name: form.name,
+            amount: form.amount
+        }
+        switch (temporary.category) {
+            case "savings":
+                setSavingsDB([...savingsDB, newObj])
+                return setCreateModal(!createModal)
+            case "bank_account":
+                setAccountDB([...accountDB, newObj])
+                return setCreateModal(!createModal)
+        }
+    }
+
+    return (
+        <div className="Overlay">
+            <div className='OverlayAreaContent'>
+                <div className='OverlayHeader'>
+                    <h3>Create</h3>
+                    <button className='CloseButton' onClick={() => setCreateModal(!createModal)}>X</button>
+                </div>
+               <form action="" className='OverlayForm' onSubmit={handleSubmit(create)}>
+                    <input type="text" placeholder='Title' className='Input' {...register("name")}/>
+                    {errors && (
+                        <p>
+                        {errors.name?.message}
+                        </p>
+                    )}
+                    <input type="number" min={0} placeholder='Value' className='Input' {...register("amount")}/>
+                    {errors && (
+                        <p>
+                        {errors.amount?.message}
+                        </p>
+                    )}
+                    <button className='Button'>Save</button>
+               </form>
+            </div>
+        </div>
+    )
 }
 
 const OverlayEdit: React.FC<OverlayEditProps>  = ({ edit, setEdit}): JSX.Element => {
+    const {temporary, setTemporary} = useContext(TemporaryContext)
+    const {accountDB, setAccountDB} = useContext(AccountsDBContext)
+    const {savingsDB, setSavingsDB} = useContext(SavingsDBContext)
+
+    const schema = yup.object().shape({
+        name: yup.string().required("Required field!").min(3, "Minimum length is 3"),
+        amount: yup.number().required("Required field!").min(0)
+    })
+
+
+    const {
+        register,
+        handleSubmit,
+        formState: { errors }
+    } = useForm({ 
+        resolver: yupResolver(schema),
+        defaultValues: {
+            name: temporary.name,
+            amount: temporary.amount
+        }
+    });
+
+    const closeModal = () => {
+        setTemporary(undefined)
+        setEdit(!edit)
+    }
+
+    const updateEntity = (form) => {
+        switch (temporary.category) {
+            case "savings":
+                setSavingsDB(savingsDB.map(saving => {
+                    if (saving.id === temporary.id) {
+                        saving.name = form.name;
+                        saving.amount = form.amount;
+                    }
+                    return saving
+                }))
+                toast(form.name + " Saving Updated!")
+                return closeModal()
+            case "bank_account":
+                setAccountDB(accountDB.map(bank => {
+                    if (bank.id === temporary.id) {
+                        bank.name = form.name;
+                        bank.amount = form.amount;
+                    }
+                    return bank
+                }))
+                toast(form.name + " Bank Account Updated!")
+                return closeModal()
+        }
+    }
+
     return (
         <div className="Overlay">
             <div className='OverlayAreaContent'>
                 <div className='OverlayHeader'>
                     <h3>Edit</h3>
-                    <button className='CloseButton' onClick={() => setEdit(!edit)}>X</button>
+                    <button className='CloseButton' onClick={closeModal}>X</button>
                 </div>
-               <form action="" className='OverlayForm'>
-                    <input type="text" placeholder='Title' className='Input'/>
-                    <input type="number" min={0} placeholder='Value' className='Input'/>
+               <form action="" className='OverlayForm' onSubmit={handleSubmit(updateEntity)}>
+                    <input type="text" placeholder='Title' className='Input' {...register("name")}/>
+                    {errors && (
+                        <p>
+                        {errors.name?.message}
+                        </p>
+                    )}
+                    <input type="number" min={0} placeholder='Value' className='Input' {...register("amount")}/>
+                    {errors && (
+                        <p>
+                        {errors.amount?.message}
+                        </p>
+                    )}
                     <button className='Button'>Save</button>
                </form>
             </div>
@@ -232,7 +358,7 @@ const RightColum = ({children}: ElementProps): JSX.Element => {
 }
 
 const HistorySection = ({children}: ElementProps): JSX.Element => {
-    const {transactionsDB, setTransactionsDB} = useContext(TransactionsDBContext)
+    const {transactionsDB} = useContext(TransactionsDBContext)
 
     return (
         <div className='HistorySection'>
@@ -271,8 +397,8 @@ const HistoryCard = ({transaction}): JSX.Element => {
 }
 
 const BalanceSection = ({children}: ElementProps): JSX.Element => {
-    const {accountDB, setAccountDB} = useContext(AccountsDBContext)
-    const {savingsDB, setSavingsDB} = useContext(SavingsDBContext)
+    const {accountDB} = useContext(AccountsDBContext)
+    const {savingsDB} = useContext(SavingsDBContext)
 
     const [totalBankAccounts, setTotalBankAccounts] = useState(0);
     const [totalSavings, setTotalSavings] = useState(0);
@@ -305,13 +431,22 @@ const BalanceSection = ({children}: ElementProps): JSX.Element => {
     )
 }
 
-const AccountsSection: React.FC<OverlayEditProps> = ({edit, setEdit}): JSX.Element => {
-    const {accountDB, setAccountDB} = useContext(AccountsDBContext)
+const AccountsSection: React.FC<OverlayEditProps> = ({edit, setEdit, createModal, setCreateModal}): JSX.Element => {
+    const {accountDB} = useContext(AccountsDBContext)
+    const {setTemporary} = useContext(TemporaryContext)
+
+    const openModal = () => {
+        setTemporary({category: "bank_account"})
+        setCreateModal(!createModal)
+    }
 
     return (
         <div className='AccountsSection'>
             <div className='ContentArea'>
-                <h3>Bank Accounts</h3>
+                <div className='AAAA'>
+                    <h3>Bank Accounts</h3>
+                    <button className='CreateButton' onClick={openModal}>+</button>
+                </div>
                 <div className='AccountCardArea'>
                     { accountDB.map(account => <AccountCard account={account} edit={edit} setEdit={setEdit}/>)}
                 </div>
@@ -322,10 +457,16 @@ const AccountsSection: React.FC<OverlayEditProps> = ({edit, setEdit}): JSX.Eleme
 
 const AccountCard: React.FC<OverlayEditProps> = ({account, edit, setEdit}) => {
     const {accountDB, setAccountDB} = useContext(AccountsDBContext)
+    const {setTemporary} = useContext(TemporaryContext)
 
     const removeItem = () => {
         setAccountDB(accountDB.filter(a => a.id !== account!.id))
         toast("Bank Account removed with success!")
+    }
+
+    const openEditModal = () => {
+        setTemporary({category: "bank_account", ...account});
+        setEdit(!edit)
     }
 
     return (
@@ -333,23 +474,32 @@ const AccountCard: React.FC<OverlayEditProps> = ({account, edit, setEdit}) => {
             <div>
                 <span>{account!.name}</span>
                 <div>
-                    <button className='CardEditButton' onClick={()=>setEdit(!edit)}>Edit</button>
+                    <button className='CardEditButton' onClick={openEditModal}>Edit</button>
                     <button className='CardRemoveButton' onClick={removeItem}>Remove</button>
                 </div>
             </div>         
-            <span className='AccountCardValue'>Total: <span>$ {account!.amount}</span></span>
+            <span className='AccountCardValue'>Total: <span>$ {account!.amount.toFixed(2)}</span></span>
         </div>
     )
 }
 
 
-const SavingsSection: React.FC<OverlayEditProps> = ({edit, setEdit}): JSX.Element => {
-    const {savingsDB, setSavingsDB} = useContext(SavingsDBContext)
-    
+const SavingsSection: React.FC<OverlayEditProps> = ({edit, setEdit, createModal, setCreateModal}): JSX.Element => {
+    const {savingsDB} = useContext(SavingsDBContext)
+    const {setTemporary} = useContext(TemporaryContext)
+
+    const openModal = () => {
+        setTemporary({category: "savings"})
+        setCreateModal(!createModal)
+    }
+
     return (
         <div className='SavingsSection'>
             <div className='ContentArea'>
-                <h3>Savings</h3>
+                <div className='AAAA'>
+                    <h3>Savings</h3>
+                    <button className='CreateButton' onClick={openModal}>+</button>
+                </div>
                 <div className='SavingsCardArea'>
                     { savingsDB.map(saving => <SavingsCard id={saving.id} saving={saving} edit={edit} setEdit={setEdit}/>) }
                 </div>
@@ -360,10 +510,16 @@ const SavingsSection: React.FC<OverlayEditProps> = ({edit, setEdit}): JSX.Elemen
 
 const SavingsCard: React.FC<OverlayEditProps> = ({saving, edit, setEdit}) => {
     const {savingsDB, setSavingsDB} = useContext(SavingsDBContext)
+    const {setTemporary} = useContext(TemporaryContext)
 
     const removeItem = () => {
         setSavingsDB(savingsDB.filter(s => s.id !== saving!.id))
         toast("Saving removed with success!")
+    }
+
+    const openEditModal = () => {
+        setTemporary({category: "savings", ...saving});
+        setEdit(!edit)
     }
 
     return (
@@ -371,13 +527,13 @@ const SavingsCard: React.FC<OverlayEditProps> = ({saving, edit, setEdit}) => {
             <div>
                 <span>{saving?.name}</span>
                 <div>
-                    <button className='CardEditButton' onClick={()=>setEdit(!edit)}>Edit</button>
+                    <button className='CardEditButton' onClick={()=>openEditModal()}>Edit</button>
                     <button className='CardRemoveButton' onClick={removeItem}>Remove</button>
                 </div>
             </div>         
-            <span className='SavingsCardValue'>Total: <span>$ {saving?.amount}</span></span>
+            <span className='SavingsCardValue'>Total: <span>$ {saving?.amount.toFixed(2)}</span></span>
         </div>
     )
 }
 
-export {MainFrame, Header, ContentFrame, MenuBar, MainSection, LeftColum, RightColum, HistorySection, BalanceSection, AccountsSection, SavingsSection, OverlayTransactions, OverlayEdit}
+export {MainFrame, Header, ContentFrame, MenuBar, MainSection, LeftColum, RightColum, HistorySection, BalanceSection, AccountsSection, SavingsSection, OverlayTransactions, OverlayEdit, OverlayCreate}

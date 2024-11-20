@@ -1,6 +1,7 @@
 import { AccountsDBProvider } from "./Accounts";
 import { SavingsDBProvider } from "./Savings";
 import { TransactionsDBProvider } from "./Transactions";
+import { TemporaryProvider } from "./Temporary";
 
 
 const Providers = ({ children }) => {
@@ -8,7 +9,9 @@ const Providers = ({ children }) => {
         <AccountsDBProvider>
             <SavingsDBProvider>
                 <TransactionsDBProvider>
-                    {children}
+                    <TemporaryProvider>
+                        {children}
+                    </TemporaryProvider>
                 </TransactionsDBProvider>
             </SavingsDBProvider>
         </AccountsDBProvider>

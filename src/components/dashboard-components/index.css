@@ -476,6 +476,27 @@
     }
 }
 
+.AAAA {
+    display: flex;
+    justify-content: space-between;
+}
+
+.CreateButton {
+    border: none;
+    background-color: #9bff87;
+    width: 20px;
+    height: 20px;
+    font-weight: bold;
+    color: #036;
+    border-radius: 2px;
+    box-shadow: 2px 2px 1px 1px black;
+}
+
+.CreateButton:hover {
+    filter: brightness(0.8);
+    cursor: pointer;
+}
+
 .OverlayForm {
     display: flex;
     flex-direction: column;
