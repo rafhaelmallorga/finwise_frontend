@@ -1,4 +1,5 @@
-## Introduction
+# FinWise - Summary
+
 
 As a final project to CS50 Introduction to Computer Science from Harvard University I decide to create a software that would impact me in real life, a software that could help me with a personal real problem.
 
