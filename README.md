@@ -1,8 +1,3 @@
-
-<video width="320" height="240" controls>
-    <source src="https://www.youtube.com/watch?v=rGHtRcwcnaI">
-</video>
-
 ## Introduction
 
 As a final project to CS50 Introduction to Computer Science from Harvard University I decide to create a software that would impact me in real life, a software that could help me with a personal real problem.
@@ -10,6 +5,10 @@ As a final project to CS50 Introduction to Computer Science from Harvard Univers
 As dad of one year child, married, two dogs and paying rent it's very important to control my expenses and know my incomes. I already used in the past some apps that promise help with financial control, but it never totally satisfy me, perhaps they are too simple or too complex.
 
 So, I decided stop complaining and let's get hands dirty...
+
+## Apresentation Video
+
+[YouTube Link](https://www.youtube.com/watch?v=rGHtRcwcnaI)
 
 ## How to use it
 
