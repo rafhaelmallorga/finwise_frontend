@@ -4,7 +4,7 @@ import { ContentFrame, Header, MainFrame, MenuBar, MainSection, LeftColum, Right
 const DashboardPage = () => {
     const [overlay, setOverlay] = useState(false);
     const [edit, setEdit] = useState(false);
-    const [createModal, setCreateModal] = useState(true)
+    const [createModal, setCreateModal] = useState(false)
 
     return (
         <MainFrame>
