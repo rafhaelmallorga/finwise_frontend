@@ -1,4 +1,8 @@
 
+<video width="320" height="240" controls>
+    <source src="https://www.youtube.com/watch?v=rGHtRcwcnaI">
+</video>
+
 ## Introduction
 
 As a final project to CS50 Introduction to Computer Science from Harvard University I decide to create a software that would impact me in real life, a software that could help me with a personal real problem.
